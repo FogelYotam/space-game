@@ -201,6 +201,7 @@
         <div id="topBar">
             <div id="ui">
                 ניקוד: <span id="score" style="color:#4CAF50;font-weight:bold;">0</span> &nbsp;|&nbsp;
+                שיא: <span id="bestScore" style="color:#ff80ff;font-weight:bold;">0</span> &nbsp;|&nbsp;
                 מטבעות: <span id="coins" style="color:gold;font-weight:bold;">0</span> &nbsp;|&nbsp;
                 שלב: <span id="level" style="color:#f9a03f;font-weight:bold;">1</span> &nbsp;|&nbsp;
                 דיוק: <span id="accuracy" style="color:lightblue;">0</span>%
@@ -420,6 +421,17 @@
         let isGameOver = false, isLevelUp = false;
         let spawnTimeout;
 
+        let bestScore = parseInt(localStorage.getItem('spaceGameBest') || '0');
+        document.getElementById('bestScore').innerText = bestScore;
+
+        function updateBestScore() {
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('spaceGameBest', bestScore);
+                document.getElementById('bestScore').innerText = bestScore;
+            }
+        }
+
         // --- Player ---
         const sizeUnit = 6.5 * 8;
         const player = {
@@ -558,6 +570,7 @@
         async function triggerGameOver() {
             isGameOver = true;
             clearTimeout(spawnTimeout);
+            updateBestScore();
             updateStatsUI();
             updateShopUI();
             // Auto-save if name already known, else show input
