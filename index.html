@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>משחק חלליות</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a2e;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+        }
+
+        #scalerContainer {
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        #scaler {
+            transform-origin: top center;
+            flex-shrink: 0;
+        }
+
+        #gameWrapper {
+            display: flex;
+            flex-direction: column;
+            width: 800px;
+        }
+
+        #topBar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        #ui {
+            font-size: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 8px;
+            line-height: 1.5;
+            color: #fff;
+            border: 1px solid #4CAF50;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        #canvasContainer {
+            position: relative;
+            width: 800px;
+        }
+
+        canvas {
+            background-color: #162447;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            border: 2px solid #e43f5a;
+            border-radius: 10px;
+            display: block;
+        }
+
+        /* Mobile controls — below the canvas */
+        #touchControls {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 30px;
+            width: 800px;
+            background: rgba(0,0,0,0.3);
+        }
+
+        @media (pointer: coarse) {
+            #touchControls { display: flex; }
+        }
+
+        /* Joystick */
+        #joystick {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            position: relative;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #joystickThumb {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            border: 2px solid white;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        /* Fire button */
+        #fireBtn {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(76, 175, 80, 0.25);
+            border: 3px solid rgba(76, 175, 80, 0.7);
+            color: white;
+            font-size: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #fireBtn.pressed {
+            background: rgba(76, 175, 80, 0.6);
+        }
+
+        /* Leaderboard */
+        #leaderboardBox {
+            background-color: #0f3460;
+            border: 3px solid #e43f5a;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            width: 260px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 0 15px #e43f5a;
+        }
+        #leaderboardBox h3 { margin-top: 0; color: #f9a03f; }
+        #nameInputArea { display: flex; flex-direction: column; gap: 10px; }
+        #nameInputArea input { padding: 5px; border-radius: 5px; border: none; outline: none; font-size: 14px; }
+        #leaderboardTable { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        #leaderboardTable th, #leaderboardTable td { text-align: center; border-bottom: 1px solid #444; padding: 5px; }
+        #leaderboardTable th { color: lightblue; }
+
+        /* Overlays */
+        #levelUpOverlay, #gameOverOverlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 20;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+        }
+
+        .panels-container { display: flex; gap: 30px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+
+        .shop-box {
+            background-color: #0f3460;
+            border: 3px solid #e43f5a;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            width: 230px;
+            box-shadow: 0 0 15px #e43f5a;
+        }
+        .shop-box h2 { margin-top: 0; color: #f9a03f; }
+
+        button {
+            background-color: #e43f5a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: Arial, sans-serif;
+        }
+        button:hover { background-color: #ff5773; transform: scale(1.05); }
+        button:disabled { background-color: #555; cursor: not-allowed; transform: none; }
+    </style>
+</head>
+<body>
+    <div id="scalerContainer">
+    <div id="scaler">
+    <div id="gameWrapper">
+
+        <div id="topBar">
+            <div id="ui">
+                ניקוד: <span id="score" style="color:#4CAF50;font-weight:bold;">0</span> &nbsp;|&nbsp;
+                מטבעות: <span id="coins" style="color:gold;font-weight:bold;">0</span> &nbsp;|&nbsp;
+                שלב: <span id="level" style="color:#f9a03f;font-weight:bold;">1</span> &nbsp;|&nbsp;
+                דיוק: <span id="accuracy" style="color:lightblue;">0</span>%
+            </div>
+        </div>
+
+        <div id="canvasContainer">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+            <!-- Level Up Overlay -->
+            <div id="levelUpOverlay">
+                <h1 id="levelUpTitle" style="font-size:50px;margin:0;color:#f9a03f;">שלב 2!</h1>
+                <p style="color:#aaa;margin:5px 0 10px;">שדרג לפני שממשיכים</p>
+                <div class="panels-container">
+                    <div class="shop-box">
+                        <h2>שדרג יריות</h2>
+                        <p style="font-size:13px;">כרגע: <span id="luCurrentYield"></span></p>
+                        <p>מחיר: <span id="luUpgradeCostText">100</span> מטבעות</p>
+                        <p>מטבעות: <span id="luCoins" style="color:gold;font-weight:bold;">0</span></p>
+                        <button id="luUpgradeBtn">שדרג</button>
+                    </div>
+                    <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                        <button id="continueBtn" style="font-size:24px;padding:15px 30px;background-color:#4CAF50;">המשך</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Over Overlay -->
+            <div id="gameOverOverlay">
+                <h1 style="font-size:60px;margin:0;color:#e43f5a;">פסלת!</h1>
+                <div class="panels-container">
+                    <div class="shop-box">
+                        <h2>חנות יריות</h2>
+                        <p style="font-size:13px;">כרגע: <span id="currentYield"></span></p>
+                        <p>מחיר: <span id="upgradeCostText">100</span> מטבעות</p>
+                        <button id="upgradeBtn">שדרג יריות</button>
+                    </div>
+                    <div class="shop-box">
+                        <h2>חנות חלליות</h2>
+                        <p style="color:gold;font-size:13px;">מטבעות: <span id="shipCoinsDisplay">0</span></p>
+                        <div id="shipOptions"></div>
+                    </div>
+                    <div id="leaderboardBox">
+                        <h3>טבלת מובילים</h3>
+                        <div id="nameInputArea">
+                            <input type="text" id="playerNameInput" placeholder="הכנס את שמך...">
+                            <button id="saveNameBtn">שמור תוצאה</button>
+                        </div>
+                        <table id="leaderboardTable" style="display:none;">
+                            <thead><tr><th>#</th><th>שם</th><th>ניקוד</th><th>שלב</th><th>דיוק</th></tr></thead>
+                            <tbody id="leaderboardBody"></tbody>
+                        </table>
+                    </div>
+                    <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;">
+                        <button id="restartBtn" style="font-size:24px;padding:15px 30px;background-color:#4CAF50;">שחק שוב</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Touch controls below canvas -->
+        <div id="touchControls">
+            <div id="joystick"><div id="joystickThumb"></div></div>
+            <button id="fireBtn">🔥</button>
+        </div>
+
+    </div><!-- gameWrapper -->
+    </div><!-- scaler -->
+    </div><!-- scalerContainer -->
+
+    <script>
+        // --- Scale game to fit screen ---
+        function scaleGame() {
+            const scaler = document.getElementById('scaler');
+            scaler.style.transform = '';
+            const naturalW = scaler.offsetWidth  || 800;
+            const naturalH = scaler.offsetHeight || 700;
+            const scale = Math.min(1, window.innerWidth / naturalW, window.innerHeight / naturalH);
+            scaler.style.transform = `scale(${scale})`;
+            document.getElementById('scalerContainer').style.height = Math.ceil(naturalH * scale) + 'px';
+        }
+        window.addEventListener('resize', scaleGame);
+
+        // --- Prevent scroll on game keys ---
+        window.addEventListener('keydown', e => {
+            if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code) || e.key === ' ')
+                e.preventDefault();
+        }, { passive: false });
+
+        const canvas   = document.getElementById('gameCanvas');
+        const ctx      = canvas.getContext('2d');
+        const scoreEl  = document.getElementById('score');
+        const coinsEl  = document.getElementById('coins');
+        const levelEl  = document.getElementById('level');
+        const accEl    = document.getElementById('accuracy');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const levelUpOverlay  = document.getElementById('levelUpOverlay');
+        const upgradeBtn   = document.getElementById('upgradeBtn');
+        const luUpgradeBtn = document.getElementById('luUpgradeBtn');
+        const restartBtn   = document.getElementById('restartBtn');
+        const continueBtn  = document.getElementById('continueBtn');
+
+        // --- Leaderboard ---
+        let currentPlayerName = null;
+        let leaderboardData = [];
+
+        async function fetchLeaderboard() {
+            try {
+                const r = await fetch('/api/scores');
+                leaderboardData = await r.json();
+            } catch {
+                leaderboardData = JSON.parse(localStorage.getItem('spaceGameLeaderboard_v2') || '[]');
+            }
+        }
+
+        async function persistLeaderboard() {
+            localStorage.setItem('spaceGameLeaderboard_v2', JSON.stringify(leaderboardData));
+            try {
+                await fetch('/api/scores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(leaderboardData)
+                });
+            } catch {}
+        }
+
+        function renderLeaderboard() {
+            const tbody = document.getElementById('leaderboardBody');
+            tbody.innerHTML = '';
+            const medals = ['🥇','🥈','🥉','4','5'];
+            [...leaderboardData]
+                .sort((a,b) => (b.score||0) - (a.score||0) || (b.level||1) - (a.level||1))
+                .slice(0, 5)
+                .forEach((p, i) => {
+                    const tr = document.createElement('tr');
+                    const isMe = p.name === currentPlayerName;
+                    if (isMe) { tr.style.fontWeight = 'bold'; tr.style.color = '#ffff00'; }
+                    tr.innerHTML = `<td>${medals[i]}</td><td>${p.name}</td><td>${p.score||0}</td><td>${p.level||1}</td><td>${p.accuracy||0}%</td>`;
+                    tbody.appendChild(tr);
+                });
+        }
+
+        async function saveToLeaderboard() {
+            if (!currentPlayerName) return;
+            const acc = enemiesSpawned > 0 ? Math.round(enemiesHit / enemiesSpawned * 100) : 0;
+            let me = leaderboardData.find(p => p.name === currentPlayerName);
+            if (!me) {
+                me = { name: currentPlayerName, score, level, accuracy: acc };
+                leaderboardData.push(me);
+            } else {
+                if (score > (me.score||0)) { me.score = score; me.accuracy = acc; }
+                if (level > (me.level||1)) me.level = level;
+            }
+            await persistLeaderboard();
+            renderLeaderboard();
+        }
+
+        document.getElementById('saveNameBtn').addEventListener('click', async () => {
+            const name = document.getElementById('playerNameInput').value.trim();
+            if (!name) return;
+            currentPlayerName = name;
+            document.getElementById('nameInputArea').style.display = 'none';
+            document.getElementById('leaderboardTable').style.display = 'table';
+            await saveToLeaderboard();
+        });
+
+        fetchLeaderboard();
+
+        // --- Ships ---
+        const SHIPS = [
+            { id: 0, name: 'ספינת ברירת מחדל', color: 'lightblue', speed: 7, cost: 0,   desc: 'הספינה הסטנדרטית' },
+            { id: 1, name: 'הנשר הזהב',         color: '#f9a03f',  speed: 9, cost: 200,  desc: 'מהירות +2, עיצוב ייחודי' },
+        ];
+        let selectedShip = 0;
+        let purchasedShips = new Set([0]);
+
+        function renderShipShop() {
+            const container = document.getElementById('shipOptions');
+            if (!container) return;
+            document.getElementById('shipCoinsDisplay').innerText = totalCoins;
+            container.innerHTML = '';
+            SHIPS.forEach(ship => {
+                const owned    = purchasedShips.has(ship.id);
+                const active   = selectedShip === ship.id;
+                const canAfford = totalCoins >= ship.cost;
+                const div = document.createElement('div');
+                div.style.cssText = `border:2px solid ${active ? '#4CAF50' : '#555'};border-radius:8px;padding:8px;margin:6px 0;text-align:center;background:rgba(0,0,0,0.3)`;
+                div.innerHTML = `<strong style="color:${ship.color}">${ship.name}</strong><br>
+                    <small style="color:#aaa">${ship.desc}</small><br>
+                    ${!owned ? `<small style="color:gold">עלות: ${ship.cost} מטבעות</small><br>` : '<small style="color:#4CAF50">✓ בבעלותך</small><br>'}
+                    <button onclick="selectOrBuyShip(${ship.id})" ${active || (!owned && !canAfford) ? 'disabled' : ''}
+                        style="margin-top:5px;font-size:13px;padding:5px 14px;background:${active ? '#4CAF50' : owned ? '#1a6b3a' : !canAfford ? '#555' : '#e43f5a'}">
+                        ${active ? '✓ נבחר' : owned ? 'בחר' : 'קנה'}
+                    </button>`;
+                container.appendChild(div);
+            });
+        }
+
+        function selectOrBuyShip(id) {
+            const ship = SHIPS.find(s => s.id === id);
+            if (!purchasedShips.has(id)) {
+                if (totalCoins < ship.cost) return;
+                totalCoins -= ship.cost;
+                coinsEl.innerText = totalCoins;
+                purchasedShips.add(id);
+            }
+            selectedShip    = id;
+            player.speed    = ship.speed;
+            player.color    = ship.color;
+            renderShipShop();
+        }
+
+        // --- Game state ---
+        let totalCoins = 0, shotYield = 10, upgradeCost = 100;
+        let score = 0, level = 1, enemiesSpawned = 0, enemiesHit = 0;
+        let isGameOver = false, isLevelUp = false;
+        let spawnTimeout;
+
+        // --- Player ---
+        const sizeUnit = 6.5 * 8;
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - sizeUnit - 20,
+            width: sizeUnit, height: sizeUnit,
+            color: 'lightblue', speed: 7
+        };
+        let moveLeft = false, moveRight = false;
+
+        // --- Bullets & Enemies ---
+        let bullets = [], enemies = [];
+
+        function getBulletProps() {
+            const tier = Math.floor((shotYield - 10) / 10);
+            return {
+                speed: 7 + tier * 2,
+                width: Math.round(4 + tier * 1.5),
+                count: tier >= 8 ? 3 : (tier >= 5 ? 2 : 1),
+                color: shotYield >= 100 ? '#ff00ff' : shotYield >= 60 ? '#00ffff' : shotYield >= 30 ? '#ffaa00' : 'yellow'
+            };
+        }
+
+        function getBulletDesc() {
+            const bp = getBulletProps();
+            return `${shotYield}נק׳ | ${bp.count} כדורים | מהירות ${bp.speed}`;
+        }
+
+        function shoot() {
+            if (isGameOver || isLevelUp) return;
+            const bp = getBulletProps();
+            const bh = 15 + bp.width;
+            const offsets = bp.count === 1 ? [0] : bp.count === 2 ? [-12, 12] : [-18, 0, 18];
+            offsets.forEach(ox => bullets.push({
+                x: player.x + ox, y: player.y - player.height / 2,
+                width: bp.width, height: bh, color: bp.color, speed: bp.speed
+            }));
+        }
+
+        // --- Keyboard ---
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowRight' || e.key === 'd') moveRight = true;
+            if (e.key === 'ArrowLeft'  || e.key === 'a') moveLeft  = true;
+            if ((e.key === ' ' || e.code === 'Space')) shoot();
+        });
+        document.addEventListener('keyup', e => {
+            if (e.key === 'ArrowRight' || e.key === 'd') moveRight = false;
+            if (e.key === 'ArrowLeft'  || e.key === 'a') moveLeft  = false;
+        });
+
+        // --- Mobile touch controls ---
+        let fireInterval = null;
+        const joystick      = document.getElementById('joystick');
+        const joystickThumb = document.getElementById('joystickThumb');
+        const fireBtn       = document.getElementById('fireBtn');
+        const DEAD_ZONE = 12, MAX_TRAVEL = 44;
+
+        function setThumb(dx) {
+            const clamped = Math.max(-MAX_TRAVEL, Math.min(MAX_TRAVEL, dx));
+            joystickThumb.style.transform = `translate(calc(-50% + ${clamped}px), -50%)`;
+        }
+
+        function resetJoystick() {
+            moveLeft = false; moveRight = false;
+            setThumb(0);
+        }
+
+        joystick.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const rect = joystick.getBoundingClientRect();
+            joystick._startX = rect.left + rect.width / 2;
+            setThumb(0);
+        }, { passive: false });
+
+        joystick.addEventListener('touchmove', e => {
+            e.preventDefault();
+            const dx = e.touches[0].clientX - joystick._startX;
+            setThumb(dx);
+            if      (dx < -DEAD_ZONE) { moveLeft = true;  moveRight = false; }
+            else if (dx >  DEAD_ZONE) { moveLeft = false; moveRight = true;  }
+            else                      { moveLeft = false; moveRight = false; }
+        }, { passive: false });
+
+        joystick.addEventListener('touchend',    e => { e.preventDefault(); resetJoystick(); }, { passive: false });
+        joystick.addEventListener('touchcancel', e => { e.preventDefault(); resetJoystick(); }, { passive: false });
+
+        fireBtn.addEventListener('touchstart',  e => { e.preventDefault(); fireBtn.classList.add('pressed'); shoot(); fireInterval = setInterval(shoot, 200); }, { passive: false });
+        fireBtn.addEventListener('touchend',    e => { e.preventDefault(); fireBtn.classList.remove('pressed'); clearInterval(fireInterval); }, { passive: false });
+        fireBtn.addEventListener('touchcancel', e => { e.preventDefault(); fireBtn.classList.remove('pressed'); clearInterval(fireInterval); }, { passive: false });
+
+        // --- Shop ---
+        function updateShopUI() {
+            document.getElementById('currentYield').innerText = getBulletDesc();
+            if (shotYield >= 100) {
+                upgradeBtn.innerText = 'מקסימום!'; upgradeBtn.disabled = true;
+                document.getElementById('upgradeCostText').innerText = '-';
+            } else {
+                document.getElementById('upgradeCostText').innerText = upgradeCost;
+                upgradeBtn.disabled = totalCoins < upgradeCost;
+            }
+        }
+
+        function updateLevelUpShopUI() {
+            document.getElementById('luCurrentYield').innerText = getBulletDesc();
+            document.getElementById('luCoins').innerText = totalCoins;
+            if (shotYield >= 100) {
+                luUpgradeBtn.innerText = 'מקסימום!'; luUpgradeBtn.disabled = true;
+                document.getElementById('luUpgradeCostText').innerText = '-';
+            } else {
+                document.getElementById('luUpgradeCostText').innerText = upgradeCost;
+                luUpgradeBtn.disabled = totalCoins < upgradeCost;
+            }
+        }
+
+        function doUpgrade() {
+            if (totalCoins < upgradeCost || shotYield >= 100) return;
+            totalCoins -= upgradeCost;
+            shotYield  += 10;
+            upgradeCost = Math.floor(upgradeCost * 1.5);
+            coinsEl.innerText = totalCoins;
+        }
+
+        upgradeBtn.addEventListener('click',   () => { doUpgrade(); updateShopUI(); });
+        luUpgradeBtn.addEventListener('click', () => { doUpgrade(); updateLevelUpShopUI(); });
+
+        // --- Level Up & Game Over ---
+        function triggerLevelUp(newLevel) {
+            isLevelUp = true;
+            clearTimeout(spawnTimeout);
+            bullets = []; enemies = [];
+            document.getElementById('levelUpTitle').innerText = `שלב ${newLevel}!`;
+            updateLevelUpShopUI();
+            levelUpOverlay.style.display = 'flex';
+        }
+
+        async function triggerGameOver() {
+            isGameOver = true;
+            clearTimeout(spawnTimeout);
+            updateStatsUI();
+            updateShopUI();
+            // Auto-save if name already known, else show input
+            if (currentPlayerName) {
+                await saveToLeaderboard();
+                document.getElementById('nameInputArea').style.display = 'none';
+                document.getElementById('leaderboardTable').style.display = 'table';
+                renderLeaderboard();
+            } else {
+                document.getElementById('nameInputArea').style.display = 'flex';
+                document.getElementById('leaderboardTable').style.display = 'none';
+            }
+            renderShipShop();
+            gameOverOverlay.style.display = 'flex';
+        }
+
+        continueBtn.addEventListener('click', () => {
+            isLevelUp = false;
+            levelUpOverlay.style.display = 'none';
+            spawnEnemy();
+            loop();
+        });
+
+        restartBtn.addEventListener('click', () => {
+            isGameOver = false;
+            // keep level, totalCoins, shotYield, upgradeCost — stay on same level
+            score = (level - 1) * 200;
+            enemiesSpawned = 0; enemiesHit = 0;
+            bullets = []; enemies = [];
+            player.x = canvas.width / 2;
+            scoreEl.innerText = score;
+            coinsEl.innerText = totalCoins;
+            updateStatsUI();
+            gameOverOverlay.style.display = 'none';
+            spawnEnemy(); loop();
+        });
+
+        // --- Spawn ---
+        function spawnEnemy() {
+            if (isGameOver || isLevelUp) return;
+            const size = Math.random() * (30 + level * 3) + (20 + level * 2);
+            const speedMult = 1 + level * 0.3;
+            enemies.push({
+                x: Math.random() * (canvas.width - size),
+                y: -size, width: size, height: size,
+                color: `hsl(${Math.max(0, 10 - level * 3)}, 85%, 55%)`,
+                speed: (Math.random() * 2 + 1.5) * speedMult
+            });
+            enemiesSpawned++;
+            updateStatsUI();
+            const delay = Math.random() * Math.max(200, 1400 - level * 110) + Math.max(80, 450 - level * 55);
+            spawnTimeout = setTimeout(spawnEnemy, delay);
+        }
+
+        // --- Draw ---
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            const cx = player.x, cy = player.y, w = player.width, h = player.height;
+            if (selectedShip === 1) {
+                // הנשר הזהב — גוף צר, כנפיים רחבות
+                ctx.fillRect(cx - w*0.18, cy - h*0.5, w*0.36, h*0.9);
+                ctx.beginPath();
+                ctx.moveTo(cx - w/2, cy + h*0.4);
+                ctx.lineTo(cx - w*0.18, cy - h*0.15);
+                ctx.lineTo(cx + w*0.18, cy - h*0.15);
+                ctx.lineTo(cx + w/2,   cy + h*0.4);
+                ctx.closePath(); ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(cx - w*0.12, cy - h*0.5);
+                ctx.lineTo(cx + w*0.12, cy - h*0.5);
+                ctx.lineTo(cx,          cy - h*0.88);
+                ctx.closePath(); ctx.fill();
+            } else {
+                // ספינת ברירת מחדל
+                ctx.fillRect(cx - w/2, cy - h/2, w, h);
+                ctx.beginPath();
+                ctx.moveTo(cx - w/2, cy - h/2);
+                ctx.lineTo(cx + w/2, cy - h/2);
+                ctx.lineTo(cx,       cy - h);
+                ctx.fill(); ctx.closePath();
+            }
+        }
+
+        function drawBullets() {
+            bullets.forEach(b => {
+                ctx.fillStyle = b.color;
+                ctx.fillRect(b.x - b.width/2, b.y, b.width, b.height);
+            });
+        }
+
+        function drawEnemies() {
+            enemies.forEach(e => {
+                ctx.fillStyle = e.color;
+                ctx.fillRect(e.x - e.width/2, e.y - e.height/2, e.width, e.height);
+            });
+        }
+
+        function updateStatsUI() {
+            const acc = enemiesSpawned > 0 ? Math.round(enemiesHit / enemiesSpawned * 100) : 0;
+            accEl.innerText = acc;
+            levelEl.innerText = level;
+        }
+
+        // --- Update ---
+        function update() {
+            if (isGameOver || isLevelUp) return;
+
+            player.x += (moveRight ? player.speed : 0) - (moveLeft ? player.speed : 0);
+            player.x = Math.max(player.width/2, Math.min(canvas.width - player.width/2, player.x));
+
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                bullets[i].y -= bullets[i].speed;
+                if (bullets[i].y < 0) bullets.splice(i, 1);
+            }
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                enemies[i].y += enemies[i].speed;
+
+                // Hit player
+                if (enemies[i].y + enemies[i].height/2 > player.y - player.height &&
+                    enemies[i].x + enemies[i].width/2 > player.x - player.width/2 &&
+                    enemies[i].x - enemies[i].width/2 < player.x + player.width/2) {
+                    triggerGameOver(); return;
+                }
+
+                // Hit bullet
+                let hit = false;
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    if (bullets[j].x > enemies[i].x - enemies[i].width/2 &&
+                        bullets[j].x < enemies[i].x + enemies[i].width/2 &&
+                        bullets[j].y < enemies[i].y + enemies[i].height/2 &&
+                        bullets[j].y > enemies[i].y - enemies[i].height/2) {
+
+                        enemies.splice(i, 1); bullets.splice(j, 1);
+                        enemiesHit++; score += shotYield; totalCoins += shotYield;
+                        scoreEl.innerText = score; coinsEl.innerText = totalCoins;
+                        updateStatsUI();
+
+                        const newLevel = Math.min(21, Math.floor(score / 200) + 1);
+                        if (newLevel > level) { level = newLevel; triggerLevelUp(level); return; }
+                        hit = true; break;
+                    }
+                }
+                if (!hit && enemies[i] && enemies[i].y > canvas.height) enemies.splice(i, 1);
+            }
+        }
+
+        // --- Loop ---
+        function loop() {
+            if (isGameOver || isLevelUp) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            update();
+            if (!isGameOver && !isLevelUp) {
+                drawPlayer(); drawBullets(); drawEnemies();
+                requestAnimationFrame(loop);
+            }
+        }
+
+        // --- Start ---
+        scaleGame();
+        updateStatsUI();
+        spawnEnemy();
+        loop();
+    </script>
+</body>
+</html>
