@@ -374,8 +374,9 @@
 
         // --- Ships ---
         const SHIPS = [
-            { id: 0, name: 'ספינת ברירת מחדל', color: 'lightblue', speed: 7, cost: 0,   desc: 'הספינה הסטנדרטית' },
-            { id: 1, name: 'הנשר הזהב',         color: '#f9a03f',  speed: 9, cost: 200,  desc: 'מהירות +2, עיצוב ייחודי' },
+            { id: 0, name: 'ספינת ברירת מחדל', color: 'lightblue', speed: 7,  cost: 0,    desc: 'הספינה הסטנדרטית' },
+            { id: 1, name: 'הנשר הזהב',         color: '#f9a03f',  speed: 9,  cost: 200,  desc: 'מהירות +2, עיצוב ייחודי' },
+            { id: 2, name: '⚽ מונדיאל',          color: '#FFD700',  speed: 11, cost: 1000, desc: 'מהירות +4, ספינת הגביע' },
         ];
         let selectedShip = 0;
         let purchasedShips = new Set([0]);
@@ -629,7 +630,41 @@
         function drawPlayer() {
             ctx.fillStyle = player.color;
             const cx = player.x, cy = player.y, w = player.width, h = player.height;
-            if (selectedShip === 1) {
+            if (selectedShip === 2) {
+                // מונדיאל — כנפיים רחבות, כדור כסוף, פסים ירוקים
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.moveTo(cx - w*0.65, cy + h*0.45);
+                ctx.lineTo(cx - w*0.2,  cy - h*0.2);
+                ctx.lineTo(cx + w*0.2,  cy - h*0.2);
+                ctx.lineTo(cx + w*0.65, cy + h*0.45);
+                ctx.closePath(); ctx.fill();
+                ctx.fillRect(cx - w*0.2, cy - h*0.5, w*0.4, h*0.85);
+                ctx.beginPath();
+                ctx.moveTo(cx - w*0.13, cy - h*0.5);
+                ctx.lineTo(cx + w*0.13, cy - h*0.5);
+                ctx.lineTo(cx,          cy - h*0.95);
+                ctx.closePath(); ctx.fill();
+                // כדור
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(cx, cy + h*0.1, w*0.17, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = '#111';
+                ctx.beginPath();
+                const pr = w * 0.08;
+                for (let i = 0; i < 5; i++) {
+                    const a = (i * 72 - 90) * Math.PI / 180;
+                    i === 0 ? ctx.moveTo(cx + pr*Math.cos(a), cy + h*0.1 + pr*Math.sin(a))
+                            : ctx.lineTo(cx + pr*Math.cos(a), cy + h*0.1 + pr*Math.sin(a));
+                }
+                ctx.closePath(); ctx.fill();
+                // פסים ירוקים
+                ctx.strokeStyle = '#00cc44';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath(); ctx.moveTo(cx - w*0.5, cy + h*0.35); ctx.lineTo(cx - w*0.28, cy); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx + w*0.5, cy + h*0.35); ctx.lineTo(cx + w*0.28, cy); ctx.stroke();
+            } else if (selectedShip === 1) {
                 // הנשר הזהב — גוף צר, כנפיים רחבות
                 ctx.fillRect(cx - w*0.18, cy - h*0.5, w*0.36, h*0.9);
                 ctx.beginPath();
