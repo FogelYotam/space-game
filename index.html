@@ -206,6 +206,7 @@
                 מטבעות: <span id="coins" style="color:gold;font-weight:bold;">0</span> &nbsp;|&nbsp;
                 שלב: <span id="level" style="color:#f9a03f;font-weight:bold;">1</span> &nbsp;|&nbsp;
                 דיוק: <span id="accuracy" style="color:lightblue;">0</span>%
+                <span id="explosiveIndicator" style="display:none;">&nbsp;|&nbsp;💥 <span style="color:#ff4444;font-weight:bold;">שלבים מפוצצים</span></span>
             </div>
         </div>
 
@@ -405,6 +406,16 @@
             });
         }
 
+        let explosiveLevels = false;
+
+        function checkExplosiveLevels() {
+            const allOwned = SHIPS.every(s => purchasedShips.has(s.id));
+            if (allOwned && !explosiveLevels) {
+                explosiveLevels = true;
+                document.getElementById('explosiveIndicator').style.display = 'inline';
+            }
+        }
+
         function selectOrBuyShip(id) {
             const ship = SHIPS.find(s => s.id === id);
             if (!purchasedShips.has(id)) {
@@ -412,6 +423,7 @@
                 totalCoins -= ship.cost;
                 coinsEl.innerText = totalCoins;
                 purchasedShips.add(id);
+                checkExplosiveLevels();
             }
             selectedShip    = id;
             player.speed    = ship.speed;
@@ -616,17 +628,21 @@
         // --- Spawn ---
         function spawnEnemy() {
             if (isGameOver || isLevelUp) return;
+            const boom = explosiveLevels ? 1.35 : 1;
             const size = Math.random() * (30 + level * 3) + (20 + level * 2);
-            const speedMult = 1 + level * 0.3;
+            const speedMult = (1 + level * 0.3) * boom;
             enemies.push({
                 x: Math.random() * (canvas.width - size),
                 y: -size, width: size, height: size,
-                color: `hsl(${Math.max(0, 10 - level * 3)}, 85%, 55%)`,
+                color: explosiveLevels
+                    ? `hsl(${Math.max(0, 10 - level * 3)}, 100%, 50%)`
+                    : `hsl(${Math.max(0, 10 - level * 3)}, 85%, 55%)`,
                 speed: (Math.random() * 2 + 1.5) * speedMult
             });
             enemiesSpawned++;
             updateStatsUI();
-            const delay = Math.random() * Math.max(200, 1400 - level * 110) + Math.max(80, 450 - level * 55);
+            const baseDelay = Math.random() * Math.max(200, 1400 - level * 110) + Math.max(80, 450 - level * 55);
+            const delay = explosiveLevels ? baseDelay * 0.75 : baseDelay;
             spawnTimeout = setTimeout(spawnEnemy, delay);
         }
 
