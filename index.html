@@ -244,7 +244,10 @@
                     </div>
                     <div class="shop-box">
                         <h2>חנות חלליות</h2>
-                        <p style="color:gold;font-size:13px;">מטבעות: <span id="shipCoinsDisplay">0</span></p>
+                        <p style="font-size:13px;margin:2px 0;">
+                            <span id="shipOwnedCount" style="color:#4CAF50;font-weight:bold;">1</span>/<span style="color:#aaa;">4</span> חלליות
+                            &nbsp;|&nbsp; מטבעות: <span id="shipCoinsDisplay" style="color:gold;font-weight:bold;">0</span>
+                        </p>
                         <div id="shipOptions"></div>
                     </div>
                     <div id="leaderboardBox">
@@ -388,6 +391,7 @@
             const container = document.getElementById('shipOptions');
             if (!container) return;
             document.getElementById('shipCoinsDisplay').innerText = totalCoins;
+            document.getElementById('shipOwnedCount').innerText = purchasedShips.size;
             container.innerHTML = '';
             SHIPS.forEach(ship => {
                 const owned    = purchasedShips.has(ship.id);
