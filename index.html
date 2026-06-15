@@ -600,7 +600,8 @@
 
         restartBtn.addEventListener('click', () => {
             isGameOver = false;
-            // score and level continue from where player died
+            // reset score only — level stays the same
+            score = 0;
             enemiesSpawned = 0; enemiesHit = 0;
             bullets = []; enemies = [];
             player.x = canvas.width / 2;
