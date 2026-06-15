@@ -234,7 +234,7 @@
             <!-- Game Over Overlay -->
             <div id="gameOverOverlay">
                 <h1 style="font-size:60px;margin:0;color:#e43f5a;">פסלת!</h1>
-                <p id="shipsOwned" style="margin:6px 0 0;font-size:18px;color:#aaa;"></p>
+
                 <div class="panels-container">
                     <div class="shop-box">
                         <h2>חנות יריות</h2>
@@ -603,7 +603,6 @@
                 document.getElementById('nameInputArea').style.display = 'flex';
                 document.getElementById('leaderboardTable').style.display = 'none';
             }
-            document.getElementById('shipsOwned').innerText = `חלליות: ${purchasedShips.size} מתוך ${SHIPS.length}`;
             renderShipShop();
             gameOverOverlay.style.display = 'flex';
         }
