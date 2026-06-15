@@ -209,6 +209,7 @@
                 שלב: <span id="level" style="color:#f9a03f;font-weight:bold;">1</span> &nbsp;|&nbsp;
                 דיוק: <span id="accuracy" style="color:lightblue;">0</span>%
                 <span id="explosiveIndicator" style="display:none;">&nbsp;|&nbsp;💥 <span style="color:#ff4444;font-weight:bold;">שלבים מפוצצים</span></span>
+                <span id="doubleIndicator" style="display:none;">&nbsp;|&nbsp;⚡ <span id="doubleGamesText" style="color:#FF8C00;font-weight:bold;">x2 (2 משחקים)</span></span>
             </div>
         </div>
 
@@ -236,6 +237,12 @@
             <!-- Game Over Overlay -->
             <div id="gameOverOverlay">
                 <h1 style="font-size:60px;margin:0;color:#e43f5a;">פסלת!</h1>
+
+                <div id="prizeSection" style="text-align:center;margin:10px 0;">
+                    <p style="color:#f9a03f;font-size:15px;margin:4px 0;font-weight:bold;">🎁 בחר 6 משבצות לקבל פרסים!</p>
+                    <div id="prizeBoxes" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:240px;margin:8px auto;"></div>
+                    <p id="prizePicksLeft" style="color:#aaa;font-size:13px;margin:4px 0;"></p>
+                </div>
 
                 <div class="panels-container">
                     <div class="shop-box">
@@ -413,6 +420,54 @@
         }
 
         let explosiveLevels = false;
+
+        // --- Prize grid ---
+        let doubleGamesLeft = 0;
+        let prizePicksLeft  = 0;
+
+        function updateDoubleIndicator() {
+            const el = document.getElementById('doubleIndicator');
+            el.style.display = doubleGamesLeft > 0 ? 'inline' : 'none';
+            document.getElementById('doubleGamesText').innerText = `x2 (${doubleGamesLeft} משחקים)`;
+        }
+
+        function initPrizeGrid() {
+            prizePicksLeft = 6;
+            const prizes = [...Array(7).fill('coins'), ...Array(2).fill('x2')];
+            prizes.sort(() => Math.random() - 0.5);
+            const container = document.getElementById('prizeBoxes');
+            container.innerHTML = '';
+            document.getElementById('prizePicksLeft').innerText = 'נותרו: 6 בחירות';
+            prizes.forEach(prize => {
+                const box = document.createElement('div');
+                box.style.cssText = 'width:72px;height:72px;background:#0f3460;border:2px solid #e43f5a;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:26px;transition:background 0.2s;';
+                box.innerText = '❓';
+                box.dataset.prize = prize;
+                box.addEventListener('click', () => {
+                    if (prizePicksLeft <= 0 || box.dataset.revealed) return;
+                    box.dataset.revealed = '1';
+                    prizePicksLeft--;
+                    if (prize === 'coins') {
+                        totalCoins += 25;
+                        coinsEl.innerText = totalCoins;
+                        box.innerText = '🪙';
+                        box.style.background = '#1a4a1a';
+                        box.style.borderColor = '#4CAF50';
+                    } else {
+                        doubleGamesLeft += 2;
+                        box.innerText = '⚡x2';
+                        box.style.background = '#4a2800';
+                        box.style.borderColor = '#FF8C00';
+                        box.style.fontSize = '16px';
+                        updateDoubleIndicator();
+                    }
+                    const left = prizePicksLeft;
+                    document.getElementById('prizePicksLeft').innerText = left > 0 ? `נותרו: ${left} בחירות` : '🎉 סיימת!';
+                    if (left <= 0) container.querySelectorAll('div').forEach(b => b.style.cursor = 'default');
+                });
+                container.appendChild(box);
+            });
+        }
 
         function checkExplosiveLevels() {
             const allOwned = SHIPS.every(s => purchasedShips.has(s.id));
@@ -593,8 +648,10 @@
             isGameOver = true;
             clearTimeout(spawnTimeout);
             updateBestScore();
+            if (doubleGamesLeft > 0) { doubleGamesLeft--; updateDoubleIndicator(); }
             updateStatsUI();
             updateShopUI();
+            initPrizeGrid();
             // Auto-save if name already known, else show input
             if (currentPlayerName) {
                 await saveToLeaderboard();
@@ -842,7 +899,8 @@
                         bullets[j].y > enemies[i].y - enemies[i].height/2) {
 
                         enemies.splice(i, 1); bullets.splice(j, 1);
-                        enemiesHit++; score += shotYield; totalCoins += shotYield;
+                        const mult = doubleGamesLeft > 0 ? 2 : 1;
+                        enemiesHit++; score += shotYield * mult; totalCoins += shotYield * mult;
                         scoreEl.innerText = score; coinsEl.innerText = totalCoins;
                         updateStatsUI();
 
