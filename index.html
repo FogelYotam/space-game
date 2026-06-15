@@ -378,6 +378,7 @@
             { id: 0, name: 'ספינת ברירת מחדל', color: 'lightblue', speed: 7,  cost: 0,    desc: 'הספינה הסטנדרטית' },
             { id: 1, name: 'הנשר הזהב',         color: '#f9a03f',  speed: 9,  cost: 200,  desc: 'מהירות +2, עיצוב ייחודי' },
             { id: 2, name: '⚽ מונדיאל',          color: '#FFD700',  speed: 11, cost: 1000, desc: 'מהירות +4, ספינת הגביע' },
+            { id: 3, name: '🏆 מונדיאל מושדרג',   color: '#00cc44',  speed: 13, cost: 2500, desc: 'מהירות +6, ספינת האלופים' },
         ];
         let selectedShip = 0;
         let purchasedShips = new Set([0]);
@@ -633,7 +634,59 @@
         function drawPlayer() {
             ctx.fillStyle = player.color;
             const cx = player.x, cy = player.y, w = player.width, h = player.height;
-            if (selectedShip === 2) {
+            if (selectedShip === 3) {
+                // מונדיאל מושדרג — ירוק עם כדור זהב ופסים לבנים
+                ctx.fillStyle = '#00cc44';
+                // כנפיים רחבות מאוד
+                ctx.beginPath();
+                ctx.moveTo(cx - w*0.8,  cy + h*0.45);
+                ctx.lineTo(cx - w*0.22, cy - h*0.25);
+                ctx.lineTo(cx + w*0.22, cy - h*0.25);
+                ctx.lineTo(cx + w*0.8,  cy + h*0.45);
+                ctx.closePath(); ctx.fill();
+                // גוף ראשי
+                ctx.fillRect(cx - w*0.22, cy - h*0.5, w*0.44, h*0.88);
+                // חרטום
+                ctx.beginPath();
+                ctx.moveTo(cx - w*0.14, cy - h*0.5);
+                ctx.lineTo(cx + w*0.14, cy - h*0.5);
+                ctx.lineTo(cx,          cy - h*0.98);
+                ctx.closePath(); ctx.fill();
+                // כנפוני זנב
+                ctx.fillStyle = '#009933';
+                ctx.beginPath();
+                ctx.moveTo(cx - w*0.22, cy + h*0.38);
+                ctx.lineTo(cx - w*0.45, cy + h*0.48);
+                ctx.lineTo(cx - w*0.22, cy + h*0.25);
+                ctx.closePath(); ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(cx + w*0.22, cy + h*0.38);
+                ctx.lineTo(cx + w*0.45, cy + h*0.48);
+                ctx.lineTo(cx + w*0.22, cy + h*0.25);
+                ctx.closePath(); ctx.fill();
+                // כדור זהב
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(cx, cy + h*0.08, w*0.17, 0, Math.PI*2);
+                ctx.fill();
+                // פנטגון שחור
+                ctx.fillStyle = '#111';
+                ctx.beginPath();
+                const pr3 = w * 0.08;
+                for (let i = 0; i < 5; i++) {
+                    const a = (i * 72 - 90) * Math.PI / 180;
+                    i === 0 ? ctx.moveTo(cx + pr3*Math.cos(a), cy + h*0.08 + pr3*Math.sin(a))
+                            : ctx.lineTo(cx + pr3*Math.cos(a), cy + h*0.08 + pr3*Math.sin(a));
+                }
+                ctx.closePath(); ctx.fill();
+                // פסים לבנים על כנפיים
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath(); ctx.moveTo(cx - w*0.65, cy + h*0.35); ctx.lineTo(cx - w*0.32, cy); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx - w*0.5,  cy + h*0.42); ctx.lineTo(cx - w*0.28, cy + h*0.1); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx + w*0.65, cy + h*0.35); ctx.lineTo(cx + w*0.32, cy); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx + w*0.5,  cy + h*0.42); ctx.lineTo(cx + w*0.28, cy + h*0.1); ctx.stroke();
+            } else if (selectedShip === 2) {
                 // מונדיאל — כנפיים רחבות, כדור כסוף, פסים ירוקים
                 ctx.fillStyle = '#FFD700';
                 ctx.beginPath();
