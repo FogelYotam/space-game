@@ -393,6 +393,7 @@
             { id: 4, name: '🎂 עוגה',              color: '#FF8C00',  speed: 12, cost: 2750, desc: 'מהירות +5, ספינת הנרות' },
             { id: 5, name: '🍰 עוגה משודרגת',      color: '#2ecc71',  speed: 14, cost: 3250, desc: 'מהירות +7, שלוש שכבות וזריקת קצף' },
             { id: 6, name: '🏓 פינג פונג',          color: '#cc0000',  speed: 16, cost: 5000, desc: 'מהירות +9, מחבט אדום-שחור' },
+            { id: 7, name: '🏓 פינג פונג משודרגת',  color: '#1e90ff',  speed: 10, cost: 685,  desc: 'מהירות +3, מחבט פרו כחול-כסף' },
         ];
         let selectedShip = 0;
         let purchasedShips = new Set([0]);
@@ -714,7 +715,42 @@
         function drawPlayer() {
             ctx.fillStyle = player.color;
             const cx = player.x, cy = player.y, w = player.width, h = player.height;
-            if (selectedShip === 6) {
+            if (selectedShip === 7) {
+                // פינג פונג משודרגת — מחבט פרו כחול-כסף עם כדור כתום
+                const r = w*0.45;
+                // ידית כסף
+                ctx.fillStyle = '#aaaaaa';
+                ctx.fillRect(cx - w*0.07, cy + h*0.18, w*0.14, h*0.32);
+                // מחבט - חצי כחול חצי כסף
+                ctx.fillStyle = '#1e90ff';
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, Math.PI*0.5, Math.PI*1.5);
+                ctx.closePath(); ctx.fill();
+                ctx.fillStyle = '#cccccc';
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, -Math.PI*0.5, Math.PI*0.5);
+                ctx.closePath(); ctx.fill();
+                // קצה זהב (פרו)
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI*2);
+                ctx.stroke();
+                // כוכב במרכז
+                ctx.fillStyle = '#FFD700';
+                ctx.font = `${Math.round(w*0.22)}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('★', cx, cy + h*0.02);
+                // כדור כתום (חרטום)
+                ctx.fillStyle = '#FF8C00';
+                ctx.beginPath();
+                ctx.arc(cx, cy - h*0.78, w*0.13, 0, Math.PI*2);
+                ctx.fill();
+                ctx.strokeStyle = '#ccc';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            } else if (selectedShip === 6) {
                 // פינג פונג — מחבט אדום-שחור עם כדור וידית עץ
                 const r = w*0.45;
                 // ידית עץ (אחורי)
