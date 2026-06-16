@@ -392,6 +392,7 @@
             { id: 3, name: '🏆 מונדיאל מושדרג',   color: '#00cc44',  speed: 13, cost: 2000, desc: 'מהירות +6, ספינת האלופים' },
             { id: 4, name: '🎂 עוגה',              color: '#FF8C00',  speed: 12, cost: 2750, desc: 'מהירות +5, ספינת הנרות' },
             { id: 5, name: '🍰 עוגה משודרגת',      color: '#2ecc71',  speed: 14, cost: 3250, desc: 'מהירות +7, שלוש שכבות וזריקת קצף' },
+            { id: 6, name: '🏓 פינג פונג',          color: '#cc0000',  speed: 16, cost: 5000, desc: 'מהירות +9, מחבט אדום-שחור' },
         ];
         let selectedShip = 0;
         let purchasedShips = new Set([0]);
@@ -713,7 +714,36 @@
         function drawPlayer() {
             ctx.fillStyle = player.color;
             const cx = player.x, cy = player.y, w = player.width, h = player.height;
-            if (selectedShip === 5) {
+            if (selectedShip === 6) {
+                // פינג פונג — מחבט אדום-שחור עם כדור וידית עץ
+                const r = w*0.45;
+                // ידית עץ (אחורי)
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(cx - w*0.07, cy + h*0.18, w*0.14, h*0.32);
+                // מחבט - חצי אדום חצי שחור
+                ctx.fillStyle = '#cc0000';
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, Math.PI*0.5, Math.PI*1.5);
+                ctx.closePath(); ctx.fill();
+                ctx.fillStyle = '#111';
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, -Math.PI*0.5, Math.PI*0.5);
+                ctx.closePath(); ctx.fill();
+                // קצה לבן
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI*2);
+                ctx.stroke();
+                // כדור פינג פונג (חרטום)
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(cx, cy - h*0.78, w*0.13, 0, Math.PI*2);
+                ctx.fill();
+                ctx.strokeStyle = '#ccc';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            } else if (selectedShip === 5) {
                 // עוגה משודרגת — ירוק, שלוש שכבות, נרות וסוכריות
                 ctx.fillStyle = '#1e8449';
                 ctx.fillRect(cx - w*0.52, cy + h*0.18, w*1.04, h*0.32);
