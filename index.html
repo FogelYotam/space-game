@@ -394,6 +394,7 @@
             { id: 5, name: '🍰 עוגה משודרגת',      color: '#2ecc71',  speed: 14, cost: 3250, desc: 'מהירות +7, שלוש שכבות וזריקת קצף' },
             { id: 6, name: '🏓 פינג פונג',          color: '#cc0000',  speed: 16, cost: 5000, desc: 'מהירות +9, מחבט אדום-שחור' },
             { id: 7, name: '🏓 פינג פונג משודרגת',  color: '#1e90ff',  speed: 10, cost: 685,  desc: 'מהירות +3, מחבט פרו כחול-כסף' },
+            { id: 8, name: '🦜 תוכי',               color: '#27ae60',  speed: 11, cost: 815,  desc: 'מהירות +4, ספינה צבעונית' },
         ];
         let selectedShip = 0;
         let purchasedShips = new Set([0]);
@@ -715,7 +716,49 @@
         function drawPlayer() {
             ctx.fillStyle = player.color;
             const cx = player.x, cy = player.y, w = player.width, h = player.height;
-            if (selectedShip === 7) {
+            if (selectedShip === 8) {
+                // תוכי — כנפיים אדומות, גוף ירוק, ראש כחול, מקור צהוב, זנב זהב
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.moveTo(cx - w*0.55, cy + h*0.4);
+                ctx.lineTo(cx - w*0.18, cy - h*0.1);
+                ctx.lineTo(cx - w*0.1,  cy + h*0.3);
+                ctx.closePath(); ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(cx + w*0.55, cy + h*0.4);
+                ctx.lineTo(cx + w*0.18, cy - h*0.1);
+                ctx.lineTo(cx + w*0.1,  cy + h*0.3);
+                ctx.closePath(); ctx.fill();
+                // גוף
+                ctx.fillStyle = '#27ae60';
+                ctx.beginPath();
+                ctx.ellipse(cx, cy + h*0.05, w*0.22, h*0.4, 0, 0, Math.PI*2);
+                ctx.fill();
+                // ראש
+                ctx.fillStyle = '#2980b9';
+                ctx.beginPath();
+                ctx.arc(cx, cy - h*0.35, w*0.18, 0, Math.PI*2);
+                ctx.fill();
+                // מקור
+                ctx.fillStyle = '#FFA500';
+                ctx.beginPath();
+                ctx.moveTo(cx - w*0.08, cy - h*0.42);
+                ctx.lineTo(cx + w*0.08, cy - h*0.42);
+                ctx.lineTo(cx,          cy - h*0.65);
+                ctx.closePath(); ctx.fill();
+                // עין
+                ctx.fillStyle = 'white';
+                ctx.beginPath(); ctx.arc(cx - w*0.06, cy - h*0.38, w*0.05, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'black';
+                ctx.beginPath(); ctx.arc(cx - w*0.06, cy - h*0.38, w*0.025, 0, Math.PI*2); ctx.fill();
+                // זנב זהב
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.moveTo(cx - w*0.08, cy + h*0.4);
+                ctx.lineTo(cx + w*0.08, cy + h*0.4);
+                ctx.lineTo(cx,          cy + h*0.65);
+                ctx.closePath(); ctx.fill();
+            } else if (selectedShip === 7) {
                 // פינג פונג משודרגת — מחבט פרו כחול-כסף עם כדור כתום
                 const r = w*0.45;
                 // ידית כסף
