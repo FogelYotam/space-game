@@ -266,7 +266,7 @@
                             <button id="saveNameBtn">שמור תוצאה</button>
                         </div>
                         <table id="leaderboardTable" style="display:none;">
-                            <thead><tr><th>#</th><th>שם</th><th>ניקוד</th><th>שלב</th><th>דיוק</th></tr></thead>
+                            <thead><tr><th>#</th><th>שם</th><th>שיא כל הזמנים</th><th>שלב</th><th>דיוק</th></tr></thead>
                             <tbody id="leaderboardBody"></tbody>
                         </table>
                     </div>
@@ -361,12 +361,13 @@
         async function saveToLeaderboard() {
             if (!currentPlayerName) return;
             const acc = enemiesSpawned > 0 ? Math.round(enemiesHit / enemiesSpawned * 100) : 0;
+            const allTimeBest = Math.max(score, bestScore);
             let me = leaderboardData.find(p => p.name === currentPlayerName);
             if (!me) {
-                me = { name: currentPlayerName, score, level, accuracy: acc };
+                me = { name: currentPlayerName, score: allTimeBest, level, accuracy: acc };
                 leaderboardData.push(me);
             } else {
-                if (score > (me.score||0)) { me.score = score; me.accuracy = acc; }
+                if (allTimeBest > (me.score||0)) { me.score = allTimeBest; me.accuracy = acc; }
                 if (level > (me.level||1)) me.level = level;
             }
             await persistLeaderboard();
@@ -393,8 +394,8 @@
             { id: 4, name: '🎂 עוגה',              color: '#FF8C00',  speed: 12, cost: 2750, desc: 'מהירות +5, ספינת הנרות' },
             { id: 5, name: '🍰 עוגה משודרגת',      color: '#2ecc71',  speed: 14, cost: 3250, desc: 'מהירות +7, שלוש שכבות וזריקת קצף' },
             { id: 6, name: '🏓 פינג פונג',          color: '#cc0000',  speed: 16, cost: 5000, desc: 'מהירות +9, מחבט אדום-שחור' },
-            { id: 7, name: '🏓 פינג פונג משודרגת',  color: '#1e90ff',  speed: 10, cost: 685,  desc: 'מהירות +3, מחבט פרו כחול-כסף' },
-            { id: 8, name: '🦜 תוכי',               color: '#27ae60',  speed: 11, cost: 815,  desc: 'מהירות +4, ספינה צבעונית' },
+            { id: 7, name: '🏓 פינג פונג משודרגת',  color: '#1e90ff',  speed: 10, cost: 6850, desc: 'מהירות +3, מחבט פרו כחול-כסף' },
+            { id: 8, name: '🦜 תוכי',               color: '#27ae60',  speed: 11, cost: 8150, desc: 'מהירות +4, ספינה צבעונית' },
             { id: 9, name: '👑 תוכי משודרג',        color: '#9b59b6',  speed: 20, cost: 9999, desc: 'מהירות +13, כתר זהב וצבעי קשת' },
         ];
         let selectedShip = 0;
