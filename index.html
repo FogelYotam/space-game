@@ -210,6 +210,7 @@
                 דיוק: <span id="accuracy" style="color:lightblue;">0</span>%
                 <span id="explosiveIndicator" style="display:none;">&nbsp;|&nbsp;💥 <span style="color:#ff4444;font-weight:bold;">שלבים מפוצצים</span></span>
                 <span id="doubleIndicator" style="display:none;">&nbsp;|&nbsp;⚡ <span id="doubleGamesText" style="color:#FF8C00;font-weight:bold;">x2 (2 משחקים)</span></span>
+                &nbsp;|&nbsp;🏆 <span id="questCounter" style="color:#c39bd3;font-weight:bold;">0</span> קווסטים
             </div>
         </div>
 
@@ -1169,17 +1170,30 @@
             { id: 'meteors25',  name: '☄️ ציד מטאורים',   desc: 'פגע ב-25 מטאורים במשחק אחד',                             target: 25,   reward: 200 },
         ];
 
-        let activeQuestId   = localStorage.getItem('sq_active') || null;
-        let questProgress   = JSON.parse(localStorage.getItem('sq_progress')  || '{}');
-        let completedQuests = new Set(JSON.parse(localStorage.getItem('sq_done') || '[]'));
-        let questShipWins   = JSON.parse(localStorage.getItem('sq_ship_wins') || '{}');
-        let questWinMarked  = false;
+        let activeQuestId        = localStorage.getItem('sq_active') || null;
+        let questProgress        = JSON.parse(localStorage.getItem('sq_progress')  || '{}');
+        let completedQuests      = new Set(JSON.parse(localStorage.getItem('sq_done') || '[]'));
+        let questShipWins        = JSON.parse(localStorage.getItem('sq_ship_wins') || '{}');
+        let questWinMarked       = false;
+        let totalQuestsCompleted = parseInt(localStorage.getItem('sq_total') || '0');
 
         function saveQuestState() {
             localStorage.setItem('sq_active',    activeQuestId || '');
             localStorage.setItem('sq_progress',  JSON.stringify(questProgress));
             localStorage.setItem('sq_done',      JSON.stringify([...completedQuests]));
             localStorage.setItem('sq_ship_wins', JSON.stringify(questShipWins));
+        }
+
+        function updateQuestCounter() {
+            document.getElementById('questCounter').innerText = totalQuestsCompleted;
+        }
+
+        function showNewQuestsNotif() {
+            const notif = document.createElement('div');
+            notif.style.cssText = 'position:absolute;top:70px;left:50%;transform:translateX(-50%);background:#9b59b6;color:white;padding:12px 24px;border-radius:10px;font-size:15px;z-index:300;font-weight:bold;text-align:center;white-space:nowrap;';
+            notif.innerHTML = '🎉 כל הקווסטים הושלמו!<br>5 קווסטים חדשים נפתחו!';
+            document.getElementById('gameWrapper').appendChild(notif);
+            setTimeout(() => notif.remove(), 4000);
         }
 
         function getQuestCurrent(q) {
@@ -1198,12 +1212,24 @@
         function completeQuest(qid) {
             if (completedQuests.has(qid)) return;
             completedQuests.add(qid);
+            totalQuestsCompleted++;
+            localStorage.setItem('sq_total', totalQuestsCompleted);
+            updateQuestCounter();
             const q = QUESTS.find(x => x.id === qid);
             totalCoins += q.reward;
             coinsEl.innerText = totalCoins;
             activeQuestId = null;
             saveQuestState();
             showQuestCompleteNotif(q);
+            if (completedQuests.size === QUESTS.length) {
+                setTimeout(() => {
+                    completedQuests.clear();
+                    questProgress = {};
+                    questShipWins = {};
+                    saveQuestState();
+                    showNewQuestsNotif();
+                }, 3500);
+            }
         }
 
         function trackQuestHit() {
@@ -1351,6 +1377,7 @@
         // --- Start ---
         scaleGame();
         updateStatsUI();
+        updateQuestCounter();
         spawnEnemy();
         loop();
     </script>
