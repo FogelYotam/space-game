@@ -284,6 +284,7 @@
                     </div>
                     <p style="color:#aaa;font-size:12px;margin:0 0 10px;">בחר קווסט אחד פעיל. ניצחון = פגיעה ב-10 מטאורים במשחק.</p>
                     <div id="questList"></div>
+                    <button id="startGameFromQuestBtn" style="width:100%;margin-top:12px;background-color:#4CAF50;font-size:17px;padding:10px;">▶ התחל משחק</button>
                 </div>
             </div>
 
@@ -1345,6 +1346,7 @@
         closeQuestPanel.addEventListener('click', () => {
             questOverlay.style.display = 'none';
         });
+        document.getElementById('startGameFromQuestBtn').addEventListener('click', startGameFromQuest);
 
         // --- Start ---
         scaleGame();
