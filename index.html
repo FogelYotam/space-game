@@ -1302,7 +1302,7 @@
                         activeQuestId = q.id;
                         if (q.id === 'meteors25') questProgress['meteors25'] = 0;
                         saveQuestState();
-                        renderQuestPanel();
+                        startGameFromQuest();
                     });
                 }
                 list.appendChild(item);
@@ -1318,6 +1318,21 @@
                     renderQuestPanel();
                 });
             });
+        }
+
+        function startGameFromQuest() {
+            questOverlay.style.display = 'none';
+            gameOverOverlay.style.display = 'none';
+            isGameOver = false;
+            score = 0;
+            enemiesSpawned = 0; enemiesHit = 0;
+            resetQuestPerGame();
+            bullets = []; enemies = [];
+            player.x = canvas.width / 2;
+            scoreEl.innerText = score;
+            coinsEl.innerText = totalCoins;
+            updateStatsUI();
+            spawnEnemy(); loop();
         }
 
         const questOverlay    = document.getElementById('questOverlay');
