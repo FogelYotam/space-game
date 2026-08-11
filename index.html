@@ -250,6 +250,7 @@
                         <p style="font-size:13px;">כרגע: <span id="currentYield"></span></p>
                         <p>מחיר: <span id="upgradeCostText">100</span> מטבעות</p>
                         <button id="upgradeBtn">שדרג יריות</button>
+                        <button id="questBtn" style="margin-top:6px;background-color:#9b59b6;font-size:14px;padding:7px 14px;">📋 פעילות</button>
                     </div>
                     <div class="shop-box">
                         <h2>חנות חלליות</h2>
@@ -272,6 +273,18 @@
                     </div>
                 </div>
                 <button id="restartBtn" style="font-size:26px;padding:16px 50px;background-color:#4CAF50;margin-top:18px;">שחק שוב</button>
+            </div>
+
+            <!-- Quest Overlay -->
+            <div id="questOverlay" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);z-index:200;overflow-y:auto;flex-direction:column;align-items:center;padding:20px 0;box-sizing:border-box;">
+                <div style="background:#16213e;border:2px solid #9b59b6;border-radius:14px;padding:18px;width:92%;max-width:460px;box-sizing:border-box;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <h2 style="color:#c39bd3;margin:0;font-size:20px;">📋 קווסטים</h2>
+                        <button id="closeQuestPanel" style="background:#444;color:white;font-size:16px;padding:3px 12px;border-radius:6px;min-width:auto;">✕</button>
+                    </div>
+                    <p style="color:#aaa;font-size:12px;margin:0 0 10px;">בחר קווסט אחד פעיל. ניצחון = פגיעה ב-10 מטאורים במשחק.</p>
+                    <div id="questList"></div>
+                </div>
             </div>
 
         </div>
@@ -645,6 +658,7 @@
             isLevelUp = true;
             clearTimeout(spawnTimeout);
             bullets = []; enemies = [];
+            trackQuestLevelUp();
             document.getElementById('levelUpTitle').innerText = `שלב ${newLevel}!`;
             updateLevelUpShopUI();
             levelUpOverlay.style.display = 'flex';
@@ -654,6 +668,7 @@
             isGameOver = true;
             clearTimeout(spawnTimeout);
             updateBestScore();
+            trackQuestGameOver();
             if (doubleGamesLeft > 0) { doubleGamesLeft--; updateDoubleIndicator(); }
             updateStatsUI();
             updateShopUI();
@@ -684,6 +699,7 @@
             // reset score only — level stays the same
             score = 0;
             enemiesSpawned = 0; enemiesHit = 0;
+            resetQuestPerGame();
             bullets = []; enemies = [];
             player.x = canvas.width / 2;
             scoreEl.innerText = score;
@@ -1121,6 +1137,7 @@
                         enemiesHit++; score += shotYield * mult; totalCoins += shotYield * mult;
                         scoreEl.innerText = score; coinsEl.innerText = totalCoins;
                         updateStatsUI();
+                        trackQuestHit();
 
                         const newLevel = Math.min(21, Math.floor(score / 200) + 1);
                         if (newLevel > level) { level = newLevel; triggerLevelUp(level); return; }
@@ -1141,6 +1158,178 @@
                 requestAnimationFrame(loop);
             }
         }
+
+        // --- Quest System ---
+        const QUESTS = [
+            { id: 'ship_wins',  name: '🚀 לוחם החלליות', desc: 'נצח 5 פעמים עם החללית הנוכחית\n(ניצחון = 10 פגיעות במשחק)', target: 5,    reward: 400 },
+            { id: 'accurate',   name: '🎯 קלע מדויק',     desc: 'סיים 3 משחקים עם דיוק 80%+',                              target: 3,    reward: 300 },
+            { id: 'level10',    name: '⚡ שולט בשלבים',   desc: 'הגע לשלב 10',                                             target: 10,   reward: 500 },
+            { id: 'coins3000',  name: '💰 מאסטר מטבעות',  desc: 'צבור 3,000 מטבעות',                                       target: 3000, reward: 750 },
+            { id: 'meteors25',  name: '☄️ ציד מטאורים',   desc: 'פגע ב-25 מטאורים במשחק אחד',                             target: 25,   reward: 200 },
+        ];
+
+        let activeQuestId   = localStorage.getItem('sq_active') || null;
+        let questProgress   = JSON.parse(localStorage.getItem('sq_progress')  || '{}');
+        let completedQuests = new Set(JSON.parse(localStorage.getItem('sq_done') || '[]'));
+        let questShipWins   = JSON.parse(localStorage.getItem('sq_ship_wins') || '{}');
+        let questWinMarked  = false;
+
+        function saveQuestState() {
+            localStorage.setItem('sq_active',    activeQuestId || '');
+            localStorage.setItem('sq_progress',  JSON.stringify(questProgress));
+            localStorage.setItem('sq_done',      JSON.stringify([...completedQuests]));
+            localStorage.setItem('sq_ship_wins', JSON.stringify(questShipWins));
+        }
+
+        function getQuestCurrent(q) {
+            if (q.id === 'ship_wins') return questShipWins[selectedShip] || 0;
+            return questProgress[q.id] || 0;
+        }
+
+        function showQuestCompleteNotif(q) {
+            const notif = document.createElement('div');
+            notif.style.cssText = 'position:absolute;top:70px;left:50%;transform:translateX(-50%);background:#27ae60;color:white;padding:10px 22px;border-radius:10px;font-size:15px;z-index:300;font-weight:bold;text-align:center;white-space:nowrap;';
+            notif.innerHTML = `✅ קווסט הושלם!<br>${q.name} &nbsp;+${q.reward} 🪙`;
+            document.getElementById('gameWrapper').appendChild(notif);
+            setTimeout(() => notif.remove(), 3500);
+        }
+
+        function completeQuest(qid) {
+            if (completedQuests.has(qid)) return;
+            completedQuests.add(qid);
+            const q = QUESTS.find(x => x.id === qid);
+            totalCoins += q.reward;
+            coinsEl.innerText = totalCoins;
+            activeQuestId = null;
+            saveQuestState();
+            showQuestCompleteNotif(q);
+        }
+
+        function trackQuestHit() {
+            if (!activeQuestId || completedQuests.has(activeQuestId)) return;
+            const q = QUESTS.find(x => x.id === activeQuestId);
+            if (!q) return;
+            if (q.id === 'meteors25') {
+                questProgress[q.id] = (questProgress[q.id] || 0) + 1;
+                if (questProgress[q.id] >= q.target) completeQuest(q.id);
+                saveQuestState();
+            }
+            if (q.id === 'ship_wins' && !questWinMarked && enemiesHit >= 10) {
+                questWinMarked = true;
+                questShipWins[selectedShip] = (questShipWins[selectedShip] || 0) + 1;
+                if ((questShipWins[selectedShip] || 0) >= q.target) completeQuest(q.id);
+                saveQuestState();
+            }
+            if (q.id === 'coins3000') {
+                const cur = Math.max(questProgress[q.id] || 0, totalCoins);
+                questProgress[q.id] = cur;
+                if (cur >= q.target) completeQuest(q.id);
+                saveQuestState();
+            }
+        }
+
+        function trackQuestGameOver() {
+            if (!activeQuestId || completedQuests.has(activeQuestId)) return;
+            const q = QUESTS.find(x => x.id === activeQuestId);
+            if (!q) return;
+            if (q.id === 'accurate') {
+                const acc = enemiesSpawned > 0 ? Math.round(enemiesHit / enemiesSpawned * 100) : 0;
+                if (acc >= 80) {
+                    questProgress[q.id] = (questProgress[q.id] || 0) + 1;
+                    if (questProgress[q.id] >= q.target) completeQuest(q.id);
+                    saveQuestState();
+                }
+            }
+        }
+
+        function trackQuestLevelUp() {
+            if (!activeQuestId || completedQuests.has(activeQuestId)) return;
+            const q = QUESTS.find(x => x.id === activeQuestId);
+            if (!q) return;
+            if (q.id === 'level10') {
+                const best = Math.max(questProgress[q.id] || 0, level);
+                questProgress[q.id] = best;
+                if (best >= q.target) completeQuest(q.id);
+                saveQuestState();
+            }
+        }
+
+        function resetQuestPerGame() {
+            questWinMarked = false;
+            if (activeQuestId === 'meteors25') questProgress['meteors25'] = 0;
+            saveQuestState();
+        }
+
+        function renderQuestPanel() {
+            const list = document.getElementById('questList');
+            list.innerHTML = '';
+            QUESTS.forEach(q => {
+                const done   = completedQuests.has(q.id);
+                const active = activeQuestId === q.id;
+                const prog   = getQuestCurrent(q);
+                const pct    = Math.min(100, Math.round(prog / q.target * 100));
+                const border = done ? '#27ae60' : active ? '#3498db' : '#444';
+                const bg     = done ? '#0d2b1d' : active ? '#0d1f2e' : '#1a1a2e';
+
+                const item = document.createElement('div');
+                item.style.cssText = `background:${bg};border:2px solid ${border};border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:${done ? 'default' : 'pointer'};`;
+
+                let actionHtml = '';
+                if (!done && active) {
+                    actionHtml = `<span id="cancelQuestInner_${q.id}" style="color:#e74c3c;font-size:12px;cursor:pointer;padding:2px 6px;border:1px solid #e74c3c;border-radius:4px;">✕ ביטול</span>`;
+                } else if (!done) {
+                    actionHtml = `<span style="color:#3498db;font-size:12px;">לחץ לבחירה</span>`;
+                } else {
+                    actionHtml = `<span style="color:#27ae60;font-size:12px;">✅ הושלם</span>`;
+                }
+
+                item.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                        <strong style="color:${done ? '#27ae60' : active ? '#5dade2' : 'white'};font-size:14px;">${q.name}</strong>
+                        <span style="color:gold;font-size:12px;">🎁 ${q.reward} 🪙</span>
+                    </div>
+                    <p style="color:#aaa;font-size:12px;margin:2px 0 6px;white-space:pre-line;">${q.desc}</p>
+                    <div style="background:#333;border-radius:4px;height:7px;">
+                        <div style="background:${done ? '#27ae60' : '#3498db'};height:100%;width:${pct}%;border-radius:4px;"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px;">
+                        <span style="color:#aaa;font-size:11px;">${prog} / ${q.target}</span>
+                        ${actionHtml}
+                    </div>`;
+
+                if (!done && !active) {
+                    item.addEventListener('click', () => {
+                        activeQuestId = q.id;
+                        if (q.id === 'meteors25') questProgress['meteors25'] = 0;
+                        saveQuestState();
+                        renderQuestPanel();
+                    });
+                }
+                list.appendChild(item);
+            });
+
+            // Cancel buttons
+            QUESTS.forEach(q => {
+                const btn = document.getElementById(`cancelQuestInner_${q.id}`);
+                if (btn) btn.addEventListener('click', e => {
+                    e.stopPropagation();
+                    activeQuestId = null;
+                    saveQuestState();
+                    renderQuestPanel();
+                });
+            });
+        }
+
+        const questOverlay    = document.getElementById('questOverlay');
+        const closeQuestPanel = document.getElementById('closeQuestPanel');
+
+        document.getElementById('questBtn').addEventListener('click', () => {
+            renderQuestPanel();
+            questOverlay.style.display = 'flex';
+        });
+        closeQuestPanel.addEventListener('click', () => {
+            questOverlay.style.display = 'none';
+        });
 
         // --- Start ---
         scaleGame();
